@@ -81,7 +81,7 @@ class DataConnection:
         sort : dict, optional
         request : dict or string, optional
         """
-        path = '{0}/find/{1}/{2}'.format(self, path, entity, entity_version)
+        path = '{0}/find/{1}/{2}'.format(self.path, entity, version)
         if projection:
             request['projection'] = projection
         if query:
