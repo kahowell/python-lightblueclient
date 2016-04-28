@@ -45,16 +45,15 @@ class DataConnection:
         self.path = parsed_url.path
         if self.path.endswith('/'):
             self.path = self.path[:-1]
+        if not ssl_context:
+            try:
+                ssl_context = ssl._create_unverified_context()
+            except AttributeError:
+                pass
         if ssl_context:
             self.connection = httplib.HTTPSConnection(hostname, port,
+                                                      cert_file=cert_file,
                                                       context=ssl_context)
-        elif ssl._create_unverified_context:
-            self.connection = httplib.HTTPSConnection(
-                hostname,
-                port,
-                cert_file=cert_file,
-                context=ssl._create_unverified_context()
-            )
         else:
             self.connection = httplib.HTTPSConnection(hostname, port,
                                                       cert_file=cert_file)
