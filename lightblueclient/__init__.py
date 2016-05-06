@@ -58,6 +58,15 @@ class DataConnection:
             self.connection = httplib.HTTPSConnection(hostname, port,
                                                       cert_file=cert_file)
 
+    def _handle_response(self):
+        response = self.connection.getresponse()
+        data = response.read()
+        if response.status == httplib.OK:
+            return json.loads(data)
+        else:
+            message = 'HTTP code: {0}; body {1}'.format(response.status, data)
+            raise RuntimeError(message)
+
     def close(self):
         """Close the connection."""
         self.connection.close()
@@ -96,8 +105,35 @@ class DataConnection:
             self.connection.request('POST', path, request, headers)
         else:
             self.connection.request('GET', path)
-        data = self.connection.getresponse().read()
-        return json.loads(data)
+        return self._handle_response()
+
+    def insert(self, entity, version, data=None, projection=None, request={}):
+        """Do an insert request for a particular version of an entity.
+
+        You can either construct the request as a dict or str, or pass parts
+        of the request.
+
+        Parameters
+        ----------
+        entity : name of the entity
+        version : version of the entity
+        data: dict, optional
+        projection : dict, optional
+        sort : dict, optional
+        request : dict or string, optional
+        """
+        if data is None and len(request) == 0:
+            raise RuntimeError('Must provide data or request')
+        path = '{0}/insert/{1}/{2}'.format(self.path, entity, version)
+        if data:
+            request['data'] = data
+        if projection:
+            request['projection'] = projection
+        if type(request) is not str:
+            request = json.dumps(request)
+        headers = {'Content-Type': 'application/json'}
+        self.connection.request('PUT', path, request, headers)
+        return self._handle_response()
 
     def __enter__(self):
         return self
